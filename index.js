@@ -62,9 +62,10 @@ io.on("connection", (socket) => {
   socket.on('answer-vid-call', ({ from, to }) => {
     io.to(to).emit('vid-call-answered', { from })
   })
-  socket.on('disconnect', () => {
-    socket.emit('user-disconnected', {userID: socket.userID})
-  })
+  socket.on('user-disconnected', ({ userId }) => {
+    // Broadcast the disconnection event to the other peer
+    socket.broadcast.emit('user-disconnected', { userId });
+  });
   roomHanlder(socket)
 });
 io.use((socket, next) => {
