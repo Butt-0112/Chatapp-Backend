@@ -19,7 +19,9 @@ app.use(cors({ origin: '*', credentials: true }))
 app.use(express.json())
 app.use('/api/auth/', auth)
 app.use('/api/users/', userRoutes)
-
+app.get('/',(req,res)=>{
+  res.send('hello world')
+})
 const io = socketIo(server, {
   cors: {
     origin: '*',
