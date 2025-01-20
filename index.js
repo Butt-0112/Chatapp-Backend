@@ -63,7 +63,7 @@ io.on("connection", (socket) => {
     io.to(to).emit('vid-call-answered', { from })
   })
   socket.on('disconnect', () => {
-    console.log('user disconnected')
+    socket.emit('user-disconnected', {userID: socket.userID})
   })
   roomHanlder(socket)
 });
