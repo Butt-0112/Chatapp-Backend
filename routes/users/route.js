@@ -118,7 +118,7 @@ router.get("/search", async (req, res) => {
       const offset = (pageNumber - 1) * pageSize;
   
       // Fetch users from Clerk API
-      const clerkUsers = await users.getUserList({
+      const clerkUsers = await clerkClient.users.getUserList({
         limit: pageSize,
         offset,
         query: query.trim(),
