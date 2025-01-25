@@ -133,7 +133,7 @@ router.get("/search", async (req, res) => {
         id: user.id,
         username: user.username || null,
         email: user.emailAddresses[0]?.emailAddress || null,
-        profileImageUrl: user.profileImageUrl || null,
+        imageUrl: user.imageUrl || null,
       }));
   
       return res.status(200).json({
