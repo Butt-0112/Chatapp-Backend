@@ -123,7 +123,7 @@ router.get("/search", async (req, res) => {
         offset,
         query: query.trim(),
       });
-  
+      console.log(clerkUsers)
       if (!Array.isArray(clerkUsers)) {
         throw new Error("Unexpected response from Clerk API");
       }
