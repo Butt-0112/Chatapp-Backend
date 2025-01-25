@@ -98,28 +98,37 @@ router.post('/getUserbyId',[
 router.get("/search", async (req, res) => {
     const { query, page = 1, limit = 20 } = req.query;
   
-    if (!query || query.trim() === "") {
-      return res.status(400).json({ error: "Search query is required" });
+    // Validate query length
+    if (!query || query.trim().length < 3) {
+      return res.status(400).json({
+        error: "Query must be at least 3 characters long.",
+      });
     }
   
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 10);
   
     if (isNaN(pageNumber) || isNaN(pageSize) || pageNumber < 1 || pageSize < 1) {
-      return res.status(400).json({ error: "Invalid pagination parameters" });
+      return res.status(400).json({
+        error: "Invalid pagination parameters.",
+      });
     }
   
     try {
-      // Fetch Clerk users matching the query
       const offset = (pageNumber - 1) * pageSize;
   
-      const clerkUsers = await clerkClient.users.getUserList({
+      // Fetch users from Clerk API
+      const clerkUsers = await users.getUserList({
         limit: pageSize,
         offset,
-        query: query.trim(), // Clerk supports query-based filtering
+        query: query.trim(),
       });
   
-      // Format user data for frontend
+      if (!Array.isArray(clerkUsers)) {
+        throw new Error("Unexpected response from Clerk API");
+      }
+  
+      // Format the user data
       const formattedUsers = clerkUsers.map((user) => ({
         id: user.id,
         username: user.username || null,
@@ -130,12 +139,14 @@ router.get("/search", async (req, res) => {
       return res.status(200).json({
         users: formattedUsers,
         currentPage: pageNumber,
-        totalPages: Math.ceil(clerkUsers.totalCount / pageSize), // Total pages if available
-        totalCount: clerkUsers.totalCount, // Total number of users matching query
+        totalPages: Math.ceil(clerkUsers.totalCount / pageSize),
+        totalCount: clerkUsers.totalCount,
       });
     } catch (error) {
       console.error("Error fetching users from Clerk:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
+      res.status(500).json({
+        error: error.message || "Failed to fetch users",
+      });
     }
   });
 module.exports = router
