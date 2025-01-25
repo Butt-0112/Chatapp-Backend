@@ -4,6 +4,9 @@ const router = express.Router()
 const {body,validationResult} = require('express-validator')
 const Message = require('../../models/Message')
 const fetchuser= require('../../middleware/fetchuser')
+const { createClerkClient } =  require('@clerk/backend')
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+
 router.post('/fetchMoreUsers',async(req,res)=>{
     const {start,end}  = req.body
     const totalUsers= await User.countDocuments()
@@ -92,4 +95,47 @@ router.post('/getUserbyId',[
 
     }
 })
+router.get("/search", async (req, res) => {
+    const { query, page = 1, limit = 20 } = req.query;
+  
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+  
+    const pageNumber = parseInt(page, 10);
+    const pageSize = parseInt(limit, 10);
+  
+    if (isNaN(pageNumber) || isNaN(pageSize) || pageNumber < 1 || pageSize < 1) {
+      return res.status(400).json({ error: "Invalid pagination parameters" });
+    }
+  
+    try {
+      // Fetch Clerk users matching the query
+      const offset = (pageNumber - 1) * pageSize;
+  
+      const clerkUsers = await clerkClient.users.getUserList({
+        limit: pageSize,
+        offset,
+        query: query.trim(), // Clerk supports query-based filtering
+      });
+  
+      // Format user data for frontend
+      const formattedUsers = clerkUsers.map((user) => ({
+        id: user.id,
+        username: user.username || null,
+        email: user.emailAddresses[0]?.emailAddress || null,
+        profileImageUrl: user.profileImageUrl || null,
+      }));
+  
+      return res.status(200).json({
+        users: formattedUsers,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(clerkUsers.totalCount / pageSize), // Total pages if available
+        totalCount: clerkUsers.totalCount, // Total number of users matching query
+      });
+    } catch (error) {
+      console.error("Error fetching users from Clerk:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
 module.exports = router
