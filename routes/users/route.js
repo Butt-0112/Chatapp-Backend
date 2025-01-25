@@ -123,13 +123,13 @@ router.get("/search", async (req, res) => {
         offset,
         query: query.trim(),
       });
-      console.log(clerkUsers)
-      if (!Array.isArray(clerkUsers)) {
+      const data = clerkUsers.data
+      if (!Array.isArray(data)) {
         throw new Error("Unexpected response from Clerk API");
       }
   
       // Format the user data
-      const formattedUsers = clerkUsers.map((user) => ({
+      const formattedUsers = data.map((user) => ({
         id: user.id,
         username: user.username || null,
         email: user.emailAddresses[0]?.emailAddress || null,
