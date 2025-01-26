@@ -31,16 +31,19 @@ router.post('/add-contact',fetchuser,[
         return res.status(400).json({errors:errors.array()})
     }
     try{
-        const {contactID} = req.body
-        const contactUser=  await User.findById(contactID).select('-password -encryptedPrivateKey -authTag')
-        if(!contactUser){
-            return res.status(404).json({message: "Contact user not found!"})
-        }
-        const id = req.user.id
-        const contact= await User.findByIdAndUpdate(id, {
-            $addToSet: { contacts: { userID: contactUser._id, name: contactUser.name ,publicKey:contactUser.publicKey} },
+        const {userId, contactID} = req.body
+        // const contactUser=  await User.findById(contactID).select('-password -encryptedPrivateKey -authTag')
+        // if(!contactUser){
+        //     return res.status(404).json({message: "Contact user not found!"})
+        // }
+        // const id = req.user.id
+        // const contact= await User.findByIdAndUpdate(id, {
+        //     $addToSet: { contacts: { userID: contactUser._id, name: contactUser.name ,publicKey:contactUser.publicKey} },
 
-          },{new:true});
+        //   },{new:true});
+        const contact = await clerkClient.users.getUser(contactID)
+        clerkClient.users.updateUser(userId, {publicMetadata:{contacts:[{...contact}]}})
+
         res.json({contact})
     }catch(e){
         res.status(500).json({error:"Internal Server Error"})
@@ -134,6 +137,8 @@ router.get("/search", async (req, res) => {
         username: user.username || null,
         email: user.emailAddresses[0]?.emailAddress || null,
         imageUrl: user.imageUrl || null,
+        publicMetadata: user.publicMetadata,
+        privateMetadata: user.privateMetadata
       }));
   
       return res.status(200).json({
