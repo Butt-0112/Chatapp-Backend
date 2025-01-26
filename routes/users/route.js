@@ -52,7 +52,7 @@ router.get('/getuser', fetchuser, async (req, res) => {
   res.json(user)
 
 })
-router.post('/fetchMessages', fetchuser, [
+router.post('/fetchMessages',  [
   body('from', 'from is required!').notEmpty(),
   body('to', 'to is required!').notEmpty(),
 ], async (req, res) => {
@@ -62,7 +62,7 @@ router.post('/fetchMessages', fetchuser, [
   }
   try {
     const { from, to } = req.body
-    if (from !== req.user.id) return
+    // if (from !== req.user.id) return
     const messages = await Message.find({
       $or: [
         { from, to },
