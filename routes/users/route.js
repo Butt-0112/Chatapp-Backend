@@ -40,12 +40,12 @@ router.post('/add-contact', [
     // Step 2: Append the new contact
     const contact = await clerkClient.users.getUser(contactID)
     const updatedContacts = [...existingContacts, contact];
-    
+      console.log(updatedContacts)
     const updated= await clerkClient.users.updateUser(userId, { publicMetadata: { contacts: updatedContacts } })
 
     res.json({ updated })
   } catch (e) {
-    res.status(500).json({ error: "Internal Server Error" })
+    res.status(500).json({ error: "Internal Server Error",e})
   }
 })
 router.get('/getuser', fetchuser, async (req, res) => {
