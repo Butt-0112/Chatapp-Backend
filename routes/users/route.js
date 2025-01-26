@@ -39,7 +39,15 @@ router.post('/add-contact', [
 
     // Step 2: Append the new contact
     const contact = await clerkClient.users.getUser(contactID)
-    const updatedContacts = [...existingContacts, contact];
+    const formattedContact=  {
+      username: contact.username||null,
+      email: contact.emailAddresses[0]?.emailAddress ||null,
+      firstName: contact.firstName || null,
+      lastName:contact.lastName ||null,
+      publicMetadata:contact.publicMetadata || {},
+      privateMetadata:contact.privateMetadata || {}
+    }
+    const updatedContacts = [...existingContacts,formattedContact];
       console.log(updatedContacts)
     const updated= await clerkClient.users.updateUser(userId, { publicMetadata: { contacts: updatedContacts } })
 
