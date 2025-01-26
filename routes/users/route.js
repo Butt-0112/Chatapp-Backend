@@ -85,7 +85,7 @@ router.post('/getUserbyId', [
   }
   try {
     const { userId } = req.body
-    const user = await User.findById(userId).select('-password -email -contacts -publicKey -encryptedPrivateKey -salt -iv -authTag')
+    const user= await clerkClient.users.getUser(userId)
     if (!user) {
       return res.status(404).json({ error: "Specified User not found!" })
     }
