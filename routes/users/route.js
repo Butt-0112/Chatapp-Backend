@@ -23,8 +23,9 @@ router.post('/fetchMoreUsers',async(req,res)=>{
     const users = await User.find().skip(start).limit(limit)
     res.json({users,totalUsers})
 })
-router.post('/add-contact',fetchuser,[
-    body('contactID','contactID is required').notEmpty()
+router.post('/add-contact',[
+    body('contactID','contactID is required').notEmpty(),
+    body('userId','userId is required').notEmpty(),
 ],async(req,res)=>{
     const errors = validationResult(req)
     if(!errors.isEmpty()){
