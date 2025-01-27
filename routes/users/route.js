@@ -82,6 +82,7 @@ router.post('/add-contact', [
       lastName: contact.lastName,
       email: contact.primaryEmailAddress?.emailAddress,
       phone: contact.phoneNumbers[0]?.phoneNumber,
+      imageUrl:contact.imageUrl
     };
 
     // Check if a document exists for the user
