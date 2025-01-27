@@ -12,6 +12,9 @@ const contactSchema = new mongoose.Schema({
   lastName: {
     type: String,
   },
+  imageUrl:{
+    type:String
+  },
   username:{
     type:String,
     required:true
