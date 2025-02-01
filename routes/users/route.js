@@ -1,7 +1,7 @@
 const express = require('express')
-const User = require('../../models/User')
 const router = express.Router()
 const { body, validationResult } = require('express-validator')
+const User = require('../../models/User')
 const Message = require('../../models/Message')
 const fetchuser = require('../../middleware/fetchuser')
 const { createClerkClient } = require('@clerk/backend')
@@ -81,6 +81,27 @@ router.post('/add-contact', [
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+router.delete('/deleteContact',[
+  body('contactID', 'contactID is required').notEmpty(),
+  body('userId', 'userId is required').notEmpty(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  try {
+
+    const {contactID,userId} = req.body;
+    const user = await UserContacts.findOneAndUpdate(
+      { clerkId: userId },
+      { $pull: { contacts: { clerkId: contactID } } },
+      { new: true }
+    );
+    res.json({contacts:user.contacts})
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' ,error});
+  }
+})
 router.post('/fetchContacts', [
   body('userId','userId is required').notEmpty()
 ],async(req,res)=>{

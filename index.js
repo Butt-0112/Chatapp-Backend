@@ -6,19 +6,20 @@ const port = 5500
 const http = require('http')
 const auth = require('./routes/auth')
 const userRoutes = require('./routes/users/route')
+const messagingRoutes =  require('./routes/messaging/route').default
 const Message = require('./models/Message')
 const socketIo = require('socket.io');
 const dbConnect = require('./db')
 const server = http.createServer(app)
 dbConnect()
 // require('dotenv').config({path: path.resolve(__dirname ,'../backend/.env')})
-const { hashMessage, generateSalt, validateMessage } = require('./utils/cryptoUtils')
 const roomHanlder = require('./JoinRoom/roomhandler')
 app.use(cors({ origin: '*', credentials: true }))
 // app.use(cors({origin:['http://localhost:3000','http://192.168.100.5:3000'],credentials:true}))
 app.use(express.json())
 app.use('/api/auth/', auth)
 app.use('/api/users/', userRoutes)
+app.use('/api/messaging/',messagingRoutes )
 app.get('/',(req,res)=>{
   res.send('hello world')
 })
