@@ -19,7 +19,7 @@ app.use(cors({ origin: '*', credentials: true }))
 app.use(express.json())
 app.use('/api/auth/', auth)
 app.use('/api/users/', userRoutes)
-app.use('/api/messaging/',messagingRoutes )
+// app.use('/api/messaging/',messagingRoutes )
 app.get('/',(req,res)=>{
   res.send('hello world')
 })
