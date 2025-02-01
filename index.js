@@ -6,7 +6,7 @@ const port = 5500
 const http = require('http')
 const auth = require('./routes/auth')
 const userRoutes = require('./routes/users/route')
-const messagingRoutes =  require('./routes/messaging/route').default
+const messagingRoutes= require('./routes/messaging/route')
 const Message = require('./models/Message')
 const socketIo = require('socket.io');
 const dbConnect = require('./db')
@@ -19,7 +19,7 @@ app.use(cors({ origin: '*', credentials: true }))
 app.use(express.json())
 app.use('/api/auth/', auth)
 app.use('/api/users/', userRoutes)
-// app.use('/api/messaging/',messagingRoutes )
+app.use('/api/messaging/',messagingRoutes )
 app.get('/',(req,res)=>{
   res.send('hello world')
 })
