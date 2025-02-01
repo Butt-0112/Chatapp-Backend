@@ -23,39 +23,7 @@ router.post('/fetchMoreUsers', async (req, res) => {
   const users = await User.find().skip(start).limit(limit)
   res.json({ users, totalUsers })
 })
-// router.post('/add-contact', [
-//   body('contactID', 'contactID is required').notEmpty(),
-//   body('userId', 'userId is required').notEmpty(),
-// ], async (req, res) => {
-//   const errors = validationResult(req)
-//   if (!errors.isEmpty()) {
-//     return res.status(400).json({ errors: errors.array() })
-//   }
-//   try {
-//     const { userId, contactID } = req.body
-    
-//     const user = await clerkClient.users.getUser(userId);
-//     const existingContacts = user.publicMetadata?.contacts || []; // Default to an empty array if contacts don't exist
 
-//     // Step 2: Append the new contact
-//     const contact = await clerkClient.users.getUser(contactID)
-//     const formattedContact=  {
-//       username: contact.username||null,
-//       email: contact.emailAddresses[0]?.emailAddress ||null,
-//       firstName: contact.firstName || null,
-//       lastName:contact.lastName ||null,
-//       publicMetadata:contact.publicMetadata || {},
-//       privateMetadata:contact.privateMetadata || {}
-//     }
-//     const updatedContacts = [...existingContacts,formattedContact];
-//       console.log(updatedContacts)
-//     const updated= await clerkClient.users.updateUser(userId, { publicMetadata: { contacts: updatedContacts } })
-
-//     res.json({ updated })
-//   } catch (e) {
-//     res.status(500).json({ error: "Internal Server Error",e})
-//   }
-// })
 router.post('/add-contact', [
   body('contactID', 'contactID is required').notEmpty(),
   body('userId', 'userId is required').notEmpty(),
