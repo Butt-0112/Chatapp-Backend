@@ -67,6 +67,9 @@ io.on("connection", (socket) => {
     // Broadcast the disconnection event to the other peer
     socket.broadcast.emit('user-disconnected', { userId });
   });
+  socket.on('message-deleted',({messageId})=>{
+    socket.emit('message-deleted',{messageId})
+  })
   roomHanlder(socket)
 });
 io.use((socket, next) => {
