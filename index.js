@@ -47,8 +47,9 @@ io.on("connection", (socket) => {
       _id: saved._id
     })
     if (io.sockets.adapter.rooms.get(to)) {
-      message.updateOne({ delivered: true })
-      await message.save()
+      saved.updateOne({ delivered: true })
+      await saved.save()
+       
     }
   })
   socket.on('call', ({ from, to ,type}) => {
