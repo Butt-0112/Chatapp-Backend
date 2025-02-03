@@ -37,4 +37,20 @@ router.post('/deleteForMe', [
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
+  router.post('/editMessage',[
+    body('messageId', 'messageId is required!').notEmpty(),
+    body('content', 'content is required!').notEmpty(),
+  ],async(req,res)=>{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const {messageId,content} = req.body
+      await Message.findByIdAndUpdate(messageId,{content})
+      res.json({msg:'Message updated Successfully!'})
+    } catch (error) {
+      
+    }
+  })
 module.exports = router

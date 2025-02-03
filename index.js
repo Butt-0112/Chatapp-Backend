@@ -77,6 +77,9 @@ io.on("connection", (socket) => {
   socket.on('message-deleted',({messageId,to})=>{
     io.to(to).emit('message-deleted',{messageId})
   })
+  socket.on('muted',({to,muted})=>{
+    io.to(to).emit('muted',{muted})
+  })
   roomHanlder(socket)
 });
 io.use((socket, next) => {
