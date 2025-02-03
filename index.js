@@ -46,11 +46,11 @@ io.on("connection", (socket) => {
       from: userID,
       _id: saved._id
     })
-    if (io.sockets.adapter.rooms.get(to)) {
-      saved.updateOne({ delivered: true })
-      await saved.save()
-       
-    }
+   
+  })
+  socket.on('message-delivered',async({messageId, delivered})=>{
+    await Message.findByIdAndUpdate(messageId, {delivered:delivered})
+    
   })
   socket.on('call', ({ from, to ,type}) => {
     console.log(from, ' tried to call ', to)
