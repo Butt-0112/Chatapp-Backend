@@ -35,14 +35,16 @@ io.on("connection", (socket) => {
   // console.log(`${userID} joined the room ${userID}`)
   socket.on('private message', async ({ content, to }) => {
     const message = new Message({ from: userID, to, content, delivered: false })
-    await message.save()
+    const saved = await message.save()
     await io.to(userID).emit('private message',{
       from:userID,
-      content
+      content,
+      _id:saved._id
     })
     await io.to(to).emit('private message', {
       content,
-      from: userID
+      from: userID,
+      _id: saved._id
     })
     if (io.sockets.adapter.rooms.get(to)) {
       message.updateOne({ delivered: true })
