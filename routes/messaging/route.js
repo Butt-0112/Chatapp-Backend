@@ -19,4 +19,22 @@ router.delete('/deleteMessage',[
         res.status(500).json({ error: 'Internal Server Error',error });
     }
 })
+router.post('/deleteForMe', [
+    body('messageId', 'messageId is required!').notEmpty(),
+    body('userId', 'userId is required!').notEmpty(),
+  ], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const { messageId, userId } = req.body;
+      await Message.findByIdAndUpdate(messageId, {
+        $addToSet: { deletedBy: userId }
+      });
+      res.status(200).json({ message: 'Message deleted for you' });
+    } catch (e) {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 module.exports = router
