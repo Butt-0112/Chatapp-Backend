@@ -36,6 +36,10 @@ io.on("connection", (socket) => {
   socket.on('private message', async ({ content, to }) => {
     const message = new Message({ from: userID, to, content, delivered: false })
     await message.save()
+    await io.to(userID).emit('private message',{
+      from:userID,
+      content
+    })
     await io.to(to).emit('private message', {
       content,
       from: userID
