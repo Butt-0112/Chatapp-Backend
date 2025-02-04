@@ -80,6 +80,9 @@ io.on("connection", (socket) => {
   socket.on('muted',({to,muted})=>{
     io.to(to).emit('muted',{muted})
   })
+  socket.on('video-status',({to,status})=>{
+    io.to(to).emit('video-status',{status})
+  })
   roomHanlder(socket)
 });
 io.use((socket, next) => {
