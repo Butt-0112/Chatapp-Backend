@@ -1,6 +1,6 @@
 var admin = require("firebase-admin");
 
-var serviceAccount = require('./livechat-4ea6c-firebase-adminsdk-fbsvc-1b79b8250e.json');
+var serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY)
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
