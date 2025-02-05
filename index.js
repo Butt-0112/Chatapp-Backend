@@ -21,7 +21,10 @@ app.use(express.json())
 app.use('/api/auth/', auth)
 app.use('/api/users/', userRoutes)
 app.use('/api/messaging/',messagingRoutes )
+<<<<<<< HEAD
 app.use('/api/fcm/',fcmRoutes)
+=======
+>>>>>>> fed93f6e752b48b45bac053535d9c660f046a01e
 app.get('/',(req,res)=>{
   res.send('hello world')
 })

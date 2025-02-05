@@ -1,4 +1,9 @@
 /node_modules
+<<<<<<< HEAD
 /secrets
 # Environment variables
 .env
+=======
+# Environment variables
+.env
+>>>>>>> fed93f6e752b48b45bac053535d9c660f046a01e
