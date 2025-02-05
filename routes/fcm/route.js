@@ -70,7 +70,27 @@ router.post('/send-notification', [
     res.status(500).send('Error while sending notifications');
   }
 })
+router.post('/getToken',[
+  body('clerkId','clerkId is required').notEmpty()
+],async(req,res)=>{
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() })
 
+  }
+  try {
+    const {clerkId} = req.body
+    const record= await FCMRecord.findOne({clerkId})
+    if(!record){
+      return res.status(404).json({msg:"No such user present"})
+    }
+    const token = record.token
+    res.json({token})
+  } catch (error) {
+    res.status(500).json({error, msg:'Internal Server Error'})
+    
+  }
+})
 
 router.post('/default-token', async (req, res) => {
   const { token ,clerkId} = req.body;
