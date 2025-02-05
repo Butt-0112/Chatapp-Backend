@@ -78,7 +78,7 @@ router.post('/default-token', async (req, res) => {
   try {
     // Use findOneAndUpdate to handle new or existing tokens atomically
      await FCMRecord.findOneAndUpdate(
-      { token: token },  // Find by token
+      { token: token ,clerkId},  // Find by token
       { $setOnInsert: { clerkId } },  // Generate new userId if token is new
       { upsert: true, new: true }  // Create if it doesn't exist, and return the updated document
     );
