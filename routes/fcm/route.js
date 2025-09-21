@@ -3,7 +3,7 @@ const router = express.Router()
 const { body, validationResult } = require('express-validator')
 const admin = require('../../adminConfig')
 
-const FCMRecord= require('../../models/FCM')
+const FCMRecord = require('../../models/FCM')
 
 
 
@@ -19,37 +19,37 @@ const removeInvalidToken = async (token) => {
   await FCMRecord.findOneAndDelete({ token });
 };
 
-const sendNotification = async (token, title, body, url) => {
-
+const sendNotification = async (token,userId, title, ciphertexts,ephemeralPublicKey, url, icon) => {
   const notificationMessage = {
     token: token,
-    notification: {
+    data: {
+      ciphertexts, // base64
+      userId,
+      ephemeralPublicKey,          // base64
 
       title: title,
-      body: body,
-
+      url: url,
+      icon: icon
     },
-    data: {
-      url: url
-    }
-  };
 
-  admin.messaging().send(notificationMessage)
-    .then((response) => {
-      //('Successfully sent message:', response);
-    })
-    .catch((error) => {
-      console.error('Error sending message:', error);
-      if (error.errorInfo.code === 'messaging/registration-token-not-registered') {
-        removeInvalidToken(token);
-      }
-    });
+  };
+  try {
+    const response = await admin.messaging().send(notificationMessage);
+    console.log(response, 'res');
+    return { success: true, response };
+  } catch (error) {
+    console.error('Error sending message:', error);
+    if (error.errorInfo?.code === 'messaging/registration-token-not-registered') {
+      await removeInvalidToken(token);
+    }
+    // Re-throw the error to be caught by the route handler
+  }
 };
 
 
 router.post('/send-notification', [
   body('title', 'title is required').notEmpty(),
-  body('body', 'body is required').notEmpty(), 
+  body('body', 'body is required').notEmpty(),
   body('url', 'url is required').notEmpty(),
   body('token', 'token is required').notEmpty(),
 
@@ -60,49 +60,49 @@ router.post('/send-notification', [
     return res.status(400).json({ errors: errors.array() })
 
   }
-  const {token,  title, body, url } = req.body
- 
+  const { token, title, body, url } = req.body
+
   try {
-     await sendNotification(token, title, body, url)
-    res.json({msg:'Notifications sent successfully!'})
+    await sendNotification(token, title, body, url)
+    res.json({ msg: 'Notifications sent successfully!' })
   } catch (error) {
     console.error('Error while sending notifications:', error);
     res.status(500).send('Error while sending notifications');
   }
 })
-router.post('/getToken',[
-  body('clerkId','clerkId is required').notEmpty()
-],async(req,res)=>{
+router.post('/getToken', [
+  body('clerkId', 'clerkId is required').notEmpty()
+], async (req, res) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() })
 
   }
   try {
-    const {clerkId} = req.body
-    const record= await FCMRecord.findOne({clerkId})
-    if(!record){
-      return res.status(404).json({msg:"No such user present"})
+    const { clerkId } = req.body
+    const record = await FCMRecord.findOne({ clerkId })
+    if (!record) {
+      return res.status(404).json({ msg: "No such user present" })
     }
     const token = record.token
-    res.json({token})
+    res.json({ token })
   } catch (error) {
-    res.status(500).json({error, msg:'Internal Server Error'})
-    
+    res.status(500).json({ error, msg: 'Internal Server Error' })
+
   }
 })
 
 router.post('/default-token', async (req, res) => {
-  const { token ,clerkId} = req.body;
+  const { token, clerkId } = req.body;
 
   try {
     // Use findOneAndUpdate to handle new or existing tokens atomically
-     await FCMRecord.findOneAndUpdate(
-      { token: token ,clerkId},  // Find by token
+    await FCMRecord.findOneAndUpdate(
+      { token: token, clerkId },  // Find by token
       { $setOnInsert: { clerkId } },  // Generate new userId if token is new
       { upsert: true, new: true }  // Create if it doesn't exist, and return the updated document
     );
-    
+
     //('UserId associated with token:', userId);
 
     res.json({ message: 'Token processed successfully', clerkId });
@@ -112,6 +112,6 @@ router.post('/default-token', async (req, res) => {
   }
 });
 
- 
 
-module.exports = router
+
+module.exports = { router, sendNotification }

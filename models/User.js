@@ -1,35 +1,31 @@
 const mongoose =require('mongoose')
 const UserSchema = new mongoose.Schema({
-    name:{type:String, required:true},
-    email:{type:String, required:true},
-    password:{type:String,required:true},
-    contacts: [
-        {
-          userID: String,
-          name: String,
-          publicKey:String
-        }
-      ],
+      clerkId: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true, // Faster lookups
+      },
+  
+      // Long-term public key (X25519 base64 encoded)
       publicKey: {
-        type: String, // Public key for E2EE
+        type: String,
         required: true,
+        minlength: 40, // Base64 X25519 public key length
+        maxlength: 100,
       },
-      encryptedPrivateKey: {
-        type: String, // Encrypted private key
-        required: true,
+      keyVersion: {
+        type: Number,
+        default: 1,
       },
-      salt: {
-        type: String, // Salt used for encrypting the private key
-        required: true,
+  
+      // Optional meta info
+      lastKeyUpdate: {
+        type: Date,
+        default: Date.now,
       },
-      iv: {
-        type: String, // Initialization vector (IV) used for encryption
-        required: true,
-      },
-      authTag: {
-        type: String, // Authentication tag (GCM mode) for integrity verification
-        required: true,
-      }
-})
+    
+      
+}, {timestamps: true})
 const User = mongoose.model('User', UserSchema)
 module.exports = User

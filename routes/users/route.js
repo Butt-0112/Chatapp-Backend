@@ -3,7 +3,6 @@ const router = express.Router()
 const { body, validationResult } = require('express-validator')
 const User = require('../../models/User')
 const Message = require('../../models/Message')
-const fetchuser = require('../../middleware/fetchuser')
 const { createClerkClient } = require('@clerk/backend')
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 const UserContacts= require('../../models/Contacts')
@@ -117,11 +116,7 @@ router.post('/fetchContacts', [
     res.status(404).json({message:'This user has no contacts'})
   }
 })
-router.get('/getuser', fetchuser, async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password')
-  res.json(user)
 
-})
 router.post('/fetchMessages',  [
   body('from', 'from is required!').notEmpty(),
   body('to', 'to is required!').notEmpty(),
@@ -222,4 +217,38 @@ router.get("/search", async (req, res) => {
     });
   }
 });
+router.post('/storePublicKey', async(req,res)=>{
+  const {clerkId, publicKey} = req.body
+  if(!clerkId||!publicKey){
+    return res.status(400).json({
+      error: "Insufficient data provided.",
+    }); 
+  }
+  const user =await User.findOne({clerkId})
+
+  if(!user){ 
+    const new_user = new User({clerkId, publicKey})
+    await new_user.save()
+  }else{
+    await User.findOneAndUpdate({clerkId}, {publicKey})
+  }
+  res.json({message:"Public Key stored successfully"})
+})
+router.post('/fetchPublicKey', async(req,res)=>{
+  const {clerkId} = req.body
+  if(!clerkId){
+    return res.status(400).json({
+      error: "Insufficient data provided.",
+    }); 
+  }
+  const user = await User.findOne({clerkId})
+  if(user){
+    return res.json({publicKey: user.publicKey})
+  }else{
+     return res.status(404).json({
+        error: "user with the provided clerkId not found!",
+      }); 
+    
+  }
+})
 module.exports = router
