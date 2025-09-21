@@ -95,7 +95,7 @@ io.on("connection", async (socket) => {
       })
     } else {
       const userToken = await FCMRecord.findOne({ clerkId: msg.to })
-      const user = await clerkClient.users.getUser(msg.to)
+      const user = await clerkClient.users.getUser(msg.from)
       
       
       const result = await sendNotification(userToken.token, msg.to, user.username, JSON.stringify(msg.ciphertexts),ephemeralPublicKey, 'https://next-js-socket-io-chatapp.vercel.app/', user.imageUrl)
