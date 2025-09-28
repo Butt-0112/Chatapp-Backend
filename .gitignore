@@ -1,6 +1,7 @@
 /node_modules
 <<<<<<< HEAD
 /secrets
+/etc
 # Environment variables
 .env
 =======

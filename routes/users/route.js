@@ -6,6 +6,7 @@ const Message = require('../../models/Message')
 const { createClerkClient } = require('@clerk/backend')
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 const UserContacts= require('../../models/Contacts')
+const UserStatus = require('../../models/UserStatus')
 router.post('/fetchMoreUsers', async (req, res) => {
   const { start, end } = req.body
   const totalUsers = await User.countDocuments()
@@ -244,6 +245,23 @@ router.post('/fetchPublicKey', async(req,res)=>{
   const user = await User.findOne({clerkId})
   if(user){
     return res.json({publicKey: user.publicKey})
+  }else{
+     return res.status(404).json({
+        error: "user with the provided clerkId not found!",
+      }); 
+    
+  }
+})
+router.post('/fetchUserStatus', async(req,res)=>{
+  const {clerkId} = req.body
+  if(!clerkId){
+    return res.status(400).json({
+      error: "Insufficient data provided.",
+    }); 
+  }
+  const status = await UserStatus.findOne({userId: clerkId})
+  if(status){
+    return res.json({status})
   }else{
      return res.status(404).json({
         error: "user with the provided clerkId not found!",
