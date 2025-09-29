@@ -40,22 +40,22 @@ io.on("connection", async (socket) => {
   socket.join(userID)
 
   socket.on('user:status', async (statusUpdate) => {
-    const {userId, status, lastSeen} = statusUpdate
+    const { userId, status, lastSeen } = statusUpdate
     try {
-        await UserStatus.findOneAndUpdate(
-          { userId},
-          { online: status==='online'? true: false, lastSeen },
-          { upsert: true }
-        );
-        // Update user status in database
+      await UserStatus.findOneAndUpdate(
+        { userId },
+        { online: status, lastSeen },
+        { upsert: true }
+      );
+      // Update user status in database
 
-        // Broadcast status change to all connected clients
-        io.emit('user:status_change', statusUpdate);
-      } catch (error) {
-        console.error('Error updating user status:', error);
+      // Broadcast status change to all connected clients
+      io.emit('user:status_change', statusUpdate);
+    } catch (error) {
+      console.error('Error updating user status:', error);
 
-      }
-    });
+    }
+  });
 
 
   // Send pending delivery receipts
@@ -77,15 +77,15 @@ io.on("connection", async (socket) => {
   socket.on('private message', async (msg) => {
     const recipientStatus = await UserStatus.findOne({ userId: msg.to });
 
-    const {  to, _id,nonce, ephemeralPublicKey, ciphertexts } = msg
-    const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralPublicKey})
+    const { to, _id, nonce, ephemeralPublicKey, ciphertexts } = msg
+    const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralPublicKey })
     const saved = await message.save()
-   
-    if (recipientStatus?.online) {
+
+    if (recipientStatus?.online === 'online') {
 
 
       await io.to(to).emit('private message', {
-        
+
         ciphertexts,
         from: userID,
         _id,
@@ -93,12 +93,11 @@ io.on("connection", async (socket) => {
         ephemeralPublicKey,
         timestamp: saved.timestamp
       })
-    } else {
+    } else if (recipientStatus?.online === 'away') {
       const userToken = await FCMRecord.findOne({ clerkId: msg.to })
       const user = await clerkClient.users.getUser(msg.from)
-      
-      
-      const result = await sendNotification(userToken.token, msg.to, user.username, JSON.stringify(msg.ciphertexts),ephemeralPublicKey, 'https://next-js-socket-io-chatapp.vercel.app/', user.imageUrl)
+
+      const result = await sendNotification(userToken.token, msg.to, user.username, JSON.stringify(msg.ciphertexts), ephemeralPublicKey, 'https://next-js-socket-io-chatapp.vercel.app/', user.imageUrl)
       if (result?.success) {
         await Message.updateOne(
           { _id: msg._id },
@@ -113,7 +112,16 @@ io.on("connection", async (socket) => {
           messageId: msg._id,
           status: { delivered: true, deliveredAt: new Date() }
         });
-      }else{
+        await io.to(to).emit('private message', {
+
+          ciphertexts,
+          from: userID,
+          _id,
+          nonce,
+          ephemeralPublicKey,
+          timestamp: saved.timestamp
+        })
+      } else {
 
         await UserStatus.updateOne(
           { userId: message.to },
@@ -152,11 +160,11 @@ io.on("connection", async (socket) => {
   });
   socket.on('message-read', async ({ userId }) => {
     const messages = await Message.find({ from: userId, 'status.read': false, 'status.delivered': true })
-  
+
     messages.forEach(msg => {
-      
+
       io.to(userId).emit("message-read", { messageId: msg._id, timestamp: msg.timestamp })
-      
+
     })
     await Message.updateMany(
       { from: userId },
@@ -212,7 +220,7 @@ io.on("connection", async (socket) => {
     //       status: 'offline',
     //       lastSeen:new Date()
     //     });
-    
+
   });
   roomHanlder(socket)
 });
