@@ -1,6 +1,6 @@
 var admin = require("firebase-admin");
 require('dotenv').config()
-var serviceAccount = require("/etc/secrets/firebaseServiceAccount.json");
+var serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY)
 
 
 admin.initializeApp({

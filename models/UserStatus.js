@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const userStatusSchema = new mongoose.Schema({
   userId: String,
-  lastSeen: Date,
+  lastSeen: {type:Date, default:Date.now()},
   online: String,
   // Store pending delivery receipts when user is offline
   pendingDeliveryReceipts: [{
