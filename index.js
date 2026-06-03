@@ -77,8 +77,8 @@ io.on("connection", async (socket) => {
   socket.on('private message', async (msg) => {
     const recipientStatus = await UserStatus.findOne({ userId: msg.to });
 
-    const { to, _id, nonce, ephemeralPublicKey, ciphertexts } = msg
-    const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralPublicKey })
+    const { to, _id, nonce, ephemeralPublicKey, ephemeralSelfPublicKey, ciphertexts } = msg
+    const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
     const saved = await message.save()
 
     if (recipientStatus?.online === 'online') {
@@ -91,6 +91,7 @@ io.on("connection", async (socket) => {
         _id,
         nonce,
         ephemeralPublicKey,
+        ephemeralSelfPublicKey,
         timestamp: saved.timestamp
       })
     } else if (recipientStatus?.online === 'away') {
@@ -119,6 +120,7 @@ io.on("connection", async (socket) => {
           _id,
           nonce,
           ephemeralPublicKey,
+          ephemeralSelfPublicKey,
           timestamp: saved.timestamp
         })
       } else {
