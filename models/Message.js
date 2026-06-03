@@ -24,6 +24,12 @@ const messageSchema = new mongoose.Schema({
     minlength: 40, // Base64 X25519 public key length
     maxlength: 100
   },
+  ephemeralSelfPublicKey: {
+    type: String,
+    required: true,
+    minlength: 40, // Base64 X25519 public key length
+    maxlength: 100
+  },
   ciphertexts: {
     type: Map,
     of: ciphertextSchema,
