@@ -45,10 +45,10 @@ io.on("connection", async (socket) => {
   socket.on('user:status', async (statusUpdate) => {
     const { userId, status, lastSeen } = statusUpdate
     try {
-      console.log('setting statuse', userId,status)
+      console.log('setting statuse', userId, status)
       setUserStatus(userId, status)
     } catch (error) {
-      
+
     }
     try {
       // await UserStatus.findOneAndUpdate(
@@ -57,10 +57,10 @@ io.on("connection", async (socket) => {
       //   { upsert: true }
       // );
       writeBuffer.addStatusOp({
-        updateOne:{
-          filter: {userId},
-          update: {$set: {online: status, lastSeen}},
-          upsert:true  
+        updateOne: {
+          filter: { userId },
+          update: { $set: { online: status, lastSeen } },
+          upsert: true
         }
       })
       // Update user status in database
@@ -92,14 +92,14 @@ io.on("connection", async (socket) => {
   // console.log(`${userID} joined the room ${userID}`)
   socket.on('private message', async (msg) => {
     // const recipientStatus = await UserStatus.findOne({ userId: msg.to });
-const timestamp = new Date()
+    const timestamp = new Date()
     const { to, _id, nonce, ephemeralPublicKey, ephemeralSelfPublicKey, ciphertexts } = msg
     // const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
     // const saved = await message.save()
-    writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey ,timestamp})
+    writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey, timestamp })
     const recipientStatus = getUserStatus(to)
     console.log('recipient status', recipientStatus, to)
-    if (recipientStatus?.online === 'online') {
+    if (recipientStatus === 'online') {
 
 
       await io.to(to).emit('private message', {
@@ -112,14 +112,14 @@ const timestamp = new Date()
         ephemeralSelfPublicKey,
         timestamp: timestamp
       })
-    } else if (recipientStatus?.online === 'away') {
+    } else if (recipientStatus === 'offline') {
       // const userToken = await FCMRecord.findOne({ clerkId: msg.to })
       // const user = await clerkClient.users.getUser(msg.from)
-      
-       const [fcmToken, user] = await Promise.all([
-      getFCMToken(msg.to),
-      clerkClient.users.getUser(msg.from)
-    ])
+
+      const [fcmToken, user] = await Promise.all([
+        getFCMToken(msg.to),
+        clerkClient.users.getUser(msg.from)
+      ])
 
 
       const result = await sendNotification(fcmToken, msg.to, user.username, JSON.stringify(msg.ciphertexts), ephemeralPublicKey, msg.from, user.imageUrl)
@@ -133,12 +133,12 @@ const timestamp = new Date()
         //     }
         //   }
         // );
-         writeBuffer.addMsgOp({
-        updateOne: {
-          filter: { _id:msg._id },
-          update: { $set: { 'status.delivered': true, 'status.deliveredAt': deliveredAt } }
-        }
-      })
+        writeBuffer.addMsgOp({
+          updateOne: {
+            filter: { _id: msg._id },
+            update: { $set: { 'status.delivered': true, 'status.deliveredAt': deliveredAt } }
+          }
+        })
         io.to(msg.from).emit('message-delivery-status', {
           messageId: msg._id,
           status: { delivered: true, deliveredAt: new Date() }
@@ -167,13 +167,13 @@ const timestamp = new Date()
         //     }
         //   }
         // );
-          writeBuffer.addStatusOp({
-        updateOne: {
-          filter: { userId: msg.to },
-          update: { $push: { pendingDeliveryReceipts: { messageId:msg._id, from: msg.from, timestamp: new Date() } } }
-        }
-      })
-    
+        writeBuffer.addStatusOp({
+          updateOne: {
+            filter: { userId: msg.to },
+            update: { $push: { pendingDeliveryReceipts: { messageId: msg._id, from: msg.from, timestamp: new Date() } } }
+          }
+        })
+
       }
     }
 
@@ -188,12 +188,12 @@ const timestamp = new Date()
     //     }
     //   }
     // );
- writeBuffer.addMsgOp({
-    updateOne: {
-      filter: { _id: messageId },
-      update: { $set: { 'status.delivered': true, 'status.deliveredAt': new Date() } }
-    }
-  })
+    writeBuffer.addMsgOp({
+      updateOne: {
+        filter: { _id: messageId },
+        update: { $set: { 'status.delivered': true, 'status.deliveredAt': new Date() } }
+      }
+    })
     io.to(to).emit('message-delivery-status', {
       messageId,
       status: {
@@ -202,17 +202,17 @@ const timestamp = new Date()
       }
     });
   });
-  socket.on('message-read', async ({ from,messageIds }) => {
+  socket.on('message-read', async ({ from, messageIds }) => {
     // const messages = await Message.find({ from: userId, 'status.read': false, 'status.delivered': true })
- if (!messageIds?.length) return
-  const readAt = new Date()
-    io.to(from).emit("message-read", {messageIds,timestamp:readAt})
-   writeBuffer.addMsgOp({
-    updateMany: {
-      filter: { _id: { $in: messageIds }, 'status.read': false, 'status.delivered': true, from },
-      update:  { $set: { 'status.read': true, 'status.readAt': readAt } }
-    }
-  }) 
+    if (!messageIds?.length) return
+    const readAt = new Date()
+    io.to(from).emit("message-read", { messageIds, timestamp: readAt })
+    writeBuffer.addMsgOp({
+      updateMany: {
+        filter: { _id: { $in: messageIds }, 'status.read': false, 'status.delivered': true, from },
+        update: { $set: { 'status.read': true, 'status.readAt': readAt } }
+      }
+    })
     // await Message.updateMany(
     //   { from: userId },
     //   {
