@@ -91,11 +91,11 @@ io.on("connection", async (socket) => {
   // console.log(`${userID} joined the room ${userID}`)
   socket.on('private message', async (msg) => {
     // const recipientStatus = await UserStatus.findOne({ userId: msg.to });
-
+const timestamp = new Date()
     const { to, _id, nonce, ephemeralPublicKey, ephemeralSelfPublicKey, ciphertexts } = msg
     // const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
     // const saved = await message.save()
-    writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
+    writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey ,timestamp})
     const recipientStatus = getUserStatus(msg.to)
 
     if (recipientStatus?.online === 'online') {
@@ -109,7 +109,7 @@ io.on("connection", async (socket) => {
         nonce,
         ephemeralPublicKey,
         ephemeralSelfPublicKey,
-        timestamp: saved.timestamp
+        timestamp: timestamp
       })
     } else if (recipientStatus?.online === 'away') {
       // const userToken = await FCMRecord.findOne({ clerkId: msg.to })
@@ -150,7 +150,7 @@ io.on("connection", async (socket) => {
           nonce,
           ephemeralPublicKey,
           ephemeralSelfPublicKey,
-          timestamp: saved.timestamp
+          timestamp: timestamp
         })
       } else {
 
