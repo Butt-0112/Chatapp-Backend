@@ -34,4 +34,5 @@ class WriteBuffer {
   destroy() { clearInterval(this._timer) }
 }
 
-module.exports = writeBuffer = new WriteBuffer()
+const writeBuffer = new WriteBuffer()
+module.exports = writeBuffer
