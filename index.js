@@ -98,7 +98,7 @@ const timestamp = new Date()
     // const saved = await message.save()
     writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey ,timestamp})
     const recipientStatus = getUserStatus(to)
-    cnosole.log('recipient status', recipientStatus, to)
+    console.log('recipient status', recipientStatus, to)
     if (recipientStatus?.online === 'online') {
 
 
