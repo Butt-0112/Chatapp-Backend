@@ -19,6 +19,9 @@ dbConnect()
 const roomHanlder = require('./JoinRoom/roomhandler')
 const FCMRecord = require('./models/FCM')
 const clerkClient = require('./utils/clerkUtils')
+const { setUserStatus, getUserStatus } = require('./utils/user-status-cache')
+const { writeBuffer } = require('./utils/write-buffer')
+const { getFCMToken } = require('./utils/fcm-token-cache')
 app.use(cors({ origin: '*', credentials: true }))
 // app.use(cors({origin:['http://localhost:3000','http://192.168.100.5:3000'],credentials:true}))
 app.use(express.json())
@@ -42,11 +45,23 @@ io.on("connection", async (socket) => {
   socket.on('user:status', async (statusUpdate) => {
     const { userId, status, lastSeen } = statusUpdate
     try {
-      await UserStatus.findOneAndUpdate(
-        { userId },
-        { online: status, lastSeen },
-        { upsert: true }
-      );
+      setUserStatus(userId, status)
+    } catch (error) {
+      
+    }
+    try {
+      // await UserStatus.findOneAndUpdate(
+      //   { userId },
+      //   { online: status, lastSeen },
+      //   { upsert: true }
+      // );
+      writeBuffer.addStatusOp({
+        updateOne:{
+          filter: {userId},
+          update: {$set: {online: status, lastSeen}},
+          upsert:true  
+        }
+      })
       // Update user status in database
 
       // Broadcast status change to all connected clients
@@ -75,11 +90,13 @@ io.on("connection", async (socket) => {
 
   // console.log(`${userID} joined the room ${userID}`)
   socket.on('private message', async (msg) => {
-    const recipientStatus = await UserStatus.findOne({ userId: msg.to });
+    // const recipientStatus = await UserStatus.findOne({ userId: msg.to });
 
     const { to, _id, nonce, ephemeralPublicKey, ephemeralSelfPublicKey, ciphertexts } = msg
-    const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
-    const saved = await message.save()
+    // const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
+    // const saved = await message.save()
+    writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
+    const recipientStatus = getUserStatus(msg.to)
 
     if (recipientStatus?.online === 'online') {
 
@@ -95,20 +112,32 @@ io.on("connection", async (socket) => {
         timestamp: saved.timestamp
       })
     } else if (recipientStatus?.online === 'away') {
-      const userToken = await FCMRecord.findOne({ clerkId: msg.to })
-      const user = await clerkClient.users.getUser(msg.from)
+      // const userToken = await FCMRecord.findOne({ clerkId: msg.to })
+      // const user = await clerkClient.users.getUser(msg.from)
+      
+       const [fcmToken, user] = await Promise.all([
+      getFCMToken(msg.to),
+      clerkClient.users.getUser(msg.from)
+    ])
 
-      const result = await sendNotification(userToken.token, msg.to, user.username, JSON.stringify(msg.ciphertexts), ephemeralPublicKey, 'https://next-js-socket-io-chatapp.vercel.app/', user.imageUrl)
+
+      const result = await sendNotification(fcmToken, msg.to, user.username, JSON.stringify(msg.ciphertexts), ephemeralPublicKey, msg.from, user.imageUrl)
       if (result?.success) {
-        await Message.updateOne(
-          { _id: msg._id },
-          {
-            $set: {
-              'status.delivered': true,
-              'status.deliveredAt': new Date()
-            }
-          }
-        );
+        // await Message.updateOne(
+        //   { _id: msg._id },
+        //   {
+        //     $set: {
+        //       'status.delivered': true,
+        //       'status.deliveredAt': new Date()
+        //     }
+        //   }
+        // );
+         writeBuffer.addMsgOp({
+        updateOne: {
+          filter: { _id:msg._id },
+          update: { $set: { 'status.delivered': true, 'status.deliveredAt': deliveredAt } }
+        }
+      })
         io.to(msg.from).emit('message-delivery-status', {
           messageId: msg._id,
           status: { delivered: true, deliveredAt: new Date() }
@@ -125,33 +154,45 @@ io.on("connection", async (socket) => {
         })
       } else {
 
-        await UserStatus.updateOne(
-          { userId: message.to },
-          {
-            $push: {
-              pendingDeliveryReceipts: {
-                messageId: message._id,
-                from: message.from,
-                timestamp: new Date()
-              }
-            }
-          }
-        );
+        // await UserStatus.updateOne(
+        //   { userId: message.to },
+        //   {
+        //     $push: {
+        //       pendingDeliveryReceipts: {
+        //         messageId: message._id,
+        //         from: message.from,
+        //         timestamp: new Date()
+        //       }
+        //     }
+        //   }
+        // );
+          writeBuffer.addStatusOp({
+        updateOne: {
+          filter: { userId: msg.to },
+          update: { $push: { pendingDeliveryReceipts: { messageId:msg._id, from: msg.from, timestamp: new Date() } } }
+        }
+      })
+    
       }
     }
 
   })
   socket.on('message-delivered', async ({ messageId, to }) => {
-    await Message.updateOne(
-      { _id: messageId },
-      {
-        $set: {
-          'status.delivered': true,
-          'status.deliveredAt': new Date()
-        }
-      }
-    );
-
+    // await Message.updateOne(
+    //   { _id: messageId },
+    //   {
+    //     $set: {
+    //       'status.delivered': true,
+    //       'status.deliveredAt': new Date()
+    //     }
+    //   }
+    // );
+ writeBuffer.addMsgOp({
+    updateOne: {
+      filter: { _id: messageId },
+      update: { $set: { 'status.delivered': true, 'status.deliveredAt': new Date() } }
+    }
+  })
     io.to(to).emit('message-delivery-status', {
       messageId,
       status: {
@@ -160,23 +201,26 @@ io.on("connection", async (socket) => {
       }
     });
   });
-  socket.on('message-read', async ({ userId }) => {
-    const messages = await Message.find({ from: userId, 'status.read': false, 'status.delivered': true })
-
-    messages.forEach(msg => {
-
-      io.to(userId).emit("message-read", { messageId: msg._id, timestamp: msg.timestamp })
-
-    })
-    await Message.updateMany(
-      { from: userId },
-      {
-        $set: {
-          'status.read': true,
-          'status.readAt': new Date()
-        }
-      },
-    );
+  socket.on('message-read', async ({ from,messageIds }) => {
+    // const messages = await Message.find({ from: userId, 'status.read': false, 'status.delivered': true })
+ if (!messageIds?.length) return
+  const readAt = new Date()
+    io.to(from).emit("message-read", {messageIds,timestamp:readAt})
+   writeBuffer.addMsgOp({
+    updateMany: {
+      filter: { _id: { $in: messageIds }, 'status.read': false, 'status.delivered': true, from },
+      update:  { $set: { 'status.read': true, 'status.readAt': readAt } }
+    }
+  }) 
+    // await Message.updateMany(
+    //   { from: userId },
+    //   {
+    //     $set: {
+    //       'status.read': true,
+    //       'status.readAt': new Date()
+    //     }
+    //   },
+    // );
   })
   socket.on('call', ({ from, to, type }) => {
     console.log(from, ' tried to call ', to)
@@ -210,18 +254,7 @@ io.on("connection", async (socket) => {
     io.to(to).emit('video-status', { status })
   })
   socket.on('disconnect', async () => {
-    // await UserStatus.findOneAndUpdate(
-    //   { userId: userID },
-    //   {
-    //     online: false,
-    //     lastSeen: new Date()
-    //   }
-    // );
-    //         io.emit('user:status_change', {
-    //       userId: socket.userID,
-    //       status: 'offline',
-    //       lastSeen:new Date()
-    //     });
+    setUserStatus(userID, 'offline')
 
   });
   roomHanlder(socket)
