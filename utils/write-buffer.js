@@ -2,6 +2,7 @@ const Message = require('../models/Message')
 const UserStatus = require('../models/UserStatus')
 // Accumulates DB ops in memory, flushes in batch every `flushMs`
 
+
 class WriteBuffer {
   constructor({ flushMs = 300, maxSize = 200 } = {}) {
     this._inserts   = []   // → Message.insertMany
@@ -33,4 +34,4 @@ class WriteBuffer {
   destroy() { clearInterval(this._timer) }
 }
 
-export const writeBuffer = new WriteBuffer()
+module.exports = writeBuffer = new WriteBuffer()

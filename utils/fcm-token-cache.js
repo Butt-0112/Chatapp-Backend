@@ -2,7 +2,7 @@ const FCMRecord = require('../models/FCM')
 const cache = new Map() // clerkId → { token, ts }
 const TTL   = 5 * 60 * 1000
 
-export async function getFCMToken(clerkId) {
+ async function getFCMToken(clerkId) {
   const hit = cache.get(clerkId)
   if (hit && Date.now() - hit.ts < TTL) return hit.token
 
@@ -11,4 +11,5 @@ export async function getFCMToken(clerkId) {
   return record?.token ?? null
 }
 
-export const invalidateFCMToken = (clerkId) => cache.delete(clerkId)
+const  invalidateFCMToken = (clerkId) => cache.delete(clerkId)
+module.exports = {getFCMToken, invalidateFCMToken}
