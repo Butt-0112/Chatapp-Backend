@@ -45,6 +45,7 @@ io.on("connection", async (socket) => {
   socket.on('user:status', async (statusUpdate) => {
     const { userId, status, lastSeen } = statusUpdate
     try {
+      console.log('setting statuse', userId,status)
       setUserStatus(userId, status)
     } catch (error) {
       
@@ -96,8 +97,8 @@ const timestamp = new Date()
     // const message = new Message({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey })
     // const saved = await message.save()
     writeBuffer.addInsert({ _id, from: userID, to, nonce, ciphertexts, ephemeralSelfPublicKey, ephemeralPublicKey ,timestamp})
-    const recipientStatus = getUserStatus(msg.to)
-
+    const recipientStatus = getUserStatus(to)
+    cnosole.log('recipient status', recipientStatus, to)
     if (recipientStatus?.online === 'online') {
 
 
