@@ -1,5 +1,4 @@
-import FCMRecord from "../models/FCM"
-
+const FCMRecord = require('../models/FCM')
 const cache = new Map() // clerkId → { token, ts }
 const TTL   = 5 * 60 * 1000
 

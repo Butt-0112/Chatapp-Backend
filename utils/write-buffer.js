@@ -1,6 +1,5 @@
-import Message from "../models/Message"
-import UserStatus from "../models/UserStatus"
-
+const Message = require('../models/Message')
+const UserStatus = require('../models/UserStatus')
 // Accumulates DB ops in memory, flushes in batch every `flushMs`
 
 class WriteBuffer {
