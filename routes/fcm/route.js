@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator')
 const admin = require('../../adminConfig')
 
 const FCMRecord = require('../../models/FCM')
+const { invalidateFCMToken } = require('../../utils/fcm-token-cache')
 
 
 
@@ -41,6 +42,7 @@ const sendNotification = async (token,userId, title, ciphertexts,ephemeralPublic
     console.error('Error sending message:', error);
     if (error.errorInfo?.code === 'messaging/registration-token-not-registered') {
       await removeInvalidToken(token);
+      await invalidateFCMToken(userId)
     }
     // Re-throw the error to be caught by the route handler
   }
