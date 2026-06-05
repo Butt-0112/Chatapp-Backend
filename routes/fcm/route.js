@@ -32,6 +32,10 @@ const sendNotification = async (token,userId, title, ciphertexts,ephemeralPublic
       // url: url,
       senderImg: icon
     },
+    notification:{
+      title,
+      body:'New Message'
+    }
 
   };
   try {
