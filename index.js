@@ -137,7 +137,7 @@ io.on("connection", async (socket) => {
         writeBuffer.addMsgOp({
           updateOne: {
             filter: { _id: msg._id },
-            update: { $set: { 'status.delivered': true, 'status.deliveredAt': deliveredAt } }
+            update: { $set: { 'status.delivered': true, 'status.deliveredAt': new Date() } }
           }
         })
         io.to(msg.from).emit('message-delivery-status', {
