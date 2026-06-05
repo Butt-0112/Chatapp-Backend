@@ -28,9 +28,9 @@ const sendNotification = async (token,userId, title, ciphertexts,ephemeralPublic
       userId,
       ephemeralPublicKey,          // base64
 
-      title: title,
-      url: url,
-      icon: icon
+      sender: title,
+      // url: url,
+      senderImg: icon
     },
 
   };
