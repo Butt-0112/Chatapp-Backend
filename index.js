@@ -121,9 +121,10 @@ io.on("connection", async (socket) => {
         clerkClient.users.getUser(msg.from)
       ])
 
-
+      console.log(fcmToken, 'got token')
       const result = await sendNotification(fcmToken, msg.to, user.username, JSON.stringify(msg.ciphertexts), ephemeralPublicKey, msg.from, user.imageUrl)
       if (result?.success) {
+        console.log(result)
         // await Message.updateOne(
         //   { _id: msg._id },
         //   {
