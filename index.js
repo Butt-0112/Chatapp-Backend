@@ -112,7 +112,7 @@ io.on("connection", async (socket) => {
         ephemeralSelfPublicKey,
         timestamp: timestamp
       })
-    } else if (recipientStatus === 'offline') {
+    } else if (recipientStatus === 'offline' || 'away') {
       // const userToken = await FCMRecord.findOne({ clerkId: msg.to })
       // const user = await clerkClient.users.getUser(msg.from)
 
