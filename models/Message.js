@@ -40,4 +40,5 @@ const messageSchema = new mongoose.Schema({
   maxRetries: { type: Number, default: 5 }
 });
 
+messageSchema.index({from:1,to:1, timestamp:1})
 module.exports = mongoose.model('Message', messageSchema);

@@ -134,7 +134,7 @@ router.post('/fetchMessages',  [
         { from, to },
         { from: to, to: from }, // Fetch both sent and received messages
       ],
-    }).sort({ createdAt: 1 }); // Sort by oldest to newest
+    }).sort({ timestamp: 1 }); // Sort by oldest to newest
 
     res.status(200).json(messages);
   } catch (e) {
