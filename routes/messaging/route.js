@@ -53,4 +53,20 @@ router.post('/deleteForMe', [
       
     }
   })
+  router.post('/getUnreadMsgs', [
+    body("userId", "userId is required!").notEmpty()
+  ], async (req,res)=>{
+     const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const {userId} = req.body
+      const msgs = await Message.find({to: userId, 'status.read': false, 'status.delivered': true}).select("_id from")
+      res.status(200).json({messages:msgs})
+    } catch (error) {
+         res.status(500).json({ error: "Internal Server Error" ,msg: error});
+  
+    }
+  })
 module.exports = router
