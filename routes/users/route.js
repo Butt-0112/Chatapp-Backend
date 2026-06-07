@@ -5,7 +5,7 @@ const User = require('../../models/User')
 const Message = require('../../models/Message')
 const { createClerkClient } = require('@clerk/backend')
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
-const UserContacts= require('../../models/Contacts')
+const UserContacts = require('../../models/Contacts')
 const UserStatus = require('../../models/UserStatus')
 router.post('/fetchMoreUsers', async (req, res) => {
   const { start, end } = req.body
@@ -50,11 +50,11 @@ router.post('/add-contact', [
       lastName: contact.lastName,
       email: contact.primaryEmailAddress?.emailAddress,
       phone: contact.phoneNumbers[0]?.phoneNumber,
-      imageUrl:contact.imageUrl
+      imageUrl: contact.imageUrl
     };
 
     // Check if a document exists for the user
-    let userContacts = await UserContacts.findOne({clerkId: userId });
+    let userContacts = await UserContacts.findOne({ clerkId: userId });
 
     if (userContacts) {
       // Check if the contact already exists
@@ -68,7 +68,7 @@ router.post('/add-contact', [
     } else {
       // Create a new document for the user if it doesn't exist
       userContacts = new UserContacts({
-        clerkId : userId,
+        clerkId: userId,
         contacts: [contactData],
       });
     }
@@ -81,7 +81,7 @@ router.post('/add-contact', [
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-router.delete('/deleteContact',[
+router.delete('/deleteContact', [
   body('contactID', 'contactID is required').notEmpty(),
   body('userId', 'userId is required').notEmpty(),
 ], async (req, res) => {
@@ -91,55 +91,75 @@ router.delete('/deleteContact',[
   }
   try {
 
-    const {contactID,userId} = req.body;
+    const { contactID, userId } = req.body;
     const user = await UserContacts.findOneAndUpdate(
       { clerkId: userId },
       { $pull: { contacts: { clerkId: contactID } } },
       { new: true }
     );
-    res.json({contacts:user.contacts})
+    res.json({ contacts: user.contacts })
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' ,error});
+    res.status(500).json({ error: 'Internal Server Error', error });
   }
 })
 router.post('/fetchContacts', [
-  body('userId','userId is required').notEmpty()
-],async(req,res)=>{
+  body('userId', 'userId is required').notEmpty()
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  const {userId} = req.body
-  const contact = await UserContacts.findOne({clerkId:userId})
-  if(contact){
-    res.json({contacts:contact.contacts})
-  }else{
-    res.status(404).json({message:'This user has no contacts'})
+  const { userId } = req.body
+  const contact = await UserContacts.findOne({ clerkId: userId })
+  if (contact) {
+    res.json({ contacts: contact.contacts })
+  } else {
+    res.status(404).json({ message: 'This user has no contacts' })
   }
 })
 
-router.post('/fetchMessages',  [
-  body('from', 'from is required!').notEmpty(),
-  body('to', 'to is required!').notEmpty(),
+router.post('/fetchMessages', [
+  body('from').notEmpty(),
+  body('to').notEmpty(),
+  body('before').optional().isISO8601(),  // cursor — load older messages
+  body('since').optional().isISO8601(),   // catch-up — load missed messages
+  body('limit').optional().isInt({ min: 1, max: 100 }),
 ], async (req, res) => {
   const errors = validationResult(req)
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() })
-  }
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() })
+
   try {
-    const { from, to } = req.body
-    // if (from !== req.user.id) return
-    const messages = await Message.find({
-      $or: [
-        { from, to },
-        { from: to, to: from }, // Fetch both sent and received messages
-      ],
-    }).sort({ timestamp: 1 }); // Sort by oldest to newest
+    const { from, to, before, since, limit = 30 } = req.body
 
-    res.status(200).json(messages);
+    const baseQuery = {
+      $or: [{ from, to }, { from: to, to: from }]
+    }
+
+    // Catch-up path — only missed messages, no pagination needed
+    if (since) {
+      const messages = await Message
+        .find({ ...baseQuery, timestamp: { $gt: new Date(since) } })
+        .sort({ timestamp: 1 })
+
+      return res.json({ messages, hasMore: false })
+    }
+
+    // Pagination path — newest page if no cursor, older page if before is set
+    const query = before
+      ? { ...baseQuery, timestamp: { $lt: new Date(before) } }
+      : baseQuery
+
+    const messages = await Message
+      .find(query)
+      .sort({ timestamp: -1 })  // newest first so limit cuts off the oldest
+      .limit(limit + 1)         // fetch one extra to know if there are more
+
+    const hasMore = messages.length > limit
+    if (hasMore) messages.pop()
+
+    res.json({ messages: messages.reverse(), hasMore }) // back to ascending for client
   } catch (e) {
-    res.status(500).json({ error: "Internal Server Error" })
-
+    res.status(500).json({ error: 'Internal Server Error' })
   }
 })
 router.post('/getUserbyId', [
@@ -151,7 +171,7 @@ router.post('/getUserbyId', [
   }
   try {
     const { userId } = req.body
-    const user= await clerkClient.users.getUser(userId)
+    const user = await clerkClient.users.getUser(userId)
     if (!user) {
       return res.status(404).json({ error: "Specified User not found!" })
     }
@@ -218,55 +238,55 @@ router.get("/search", async (req, res) => {
     });
   }
 });
-router.post('/storePublicKey', async(req,res)=>{
-  const {clerkId, publicKey} = req.body
-  if(!clerkId||!publicKey){
+router.post('/storePublicKey', async (req, res) => {
+  const { clerkId, publicKey } = req.body
+  if (!clerkId || !publicKey) {
     return res.status(400).json({
       error: "Insufficient data provided.",
-    }); 
+    });
   }
-  const user =await User.findOne({clerkId})
+  const user = await User.findOne({ clerkId })
 
-  if(!user){ 
-    const new_user = new User({clerkId, publicKey})
+  if (!user) {
+    const new_user = new User({ clerkId, publicKey })
     await new_user.save()
-  }else{
-    await User.findOneAndUpdate({clerkId}, {publicKey})
+  } else {
+    await User.findOneAndUpdate({ clerkId }, { publicKey })
   }
-  res.json({message:"Public Key stored successfully"})
+  res.json({ message: "Public Key stored successfully" })
 })
-router.post('/fetchPublicKey', async(req,res)=>{
-  const {clerkId} = req.body
-  if(!clerkId){
+router.post('/fetchPublicKey', async (req, res) => {
+  const { clerkId } = req.body
+  if (!clerkId) {
     return res.status(400).json({
       error: "Insufficient data provided.",
-    }); 
+    });
   }
-  const user = await User.findOne({clerkId})
-  if(user){
-    return res.json({publicKey: user.publicKey})
-  }else{
-     return res.status(404).json({
-        error: "user with the provided clerkId not found!",
-      }); 
-    
+  const user = await User.findOne({ clerkId })
+  if (user) {
+    return res.json({ publicKey: user.publicKey })
+  } else {
+    return res.status(404).json({
+      error: "user with the provided clerkId not found!",
+    });
+
   }
 })
-router.post('/fetchUserStatus', async(req,res)=>{
-  const {clerkId} = req.body
-  if(!clerkId){
+router.post('/fetchUserStatus', async (req, res) => {
+  const { clerkId } = req.body
+  if (!clerkId) {
     return res.status(400).json({
       error: "Insufficient data provided.",
-    }); 
+    });
   }
-  const status = await UserStatus.findOne({userId: clerkId})
-  if(status){
-    return res.json({status})
-  }else{
-     return res.status(404).json({
-        error: "user with the provided clerkId not found!",
-      }); 
-    
+  const status = await UserStatus.findOne({ userId: clerkId })
+  if (status) {
+    return res.json({ status })
+  } else {
+    return res.status(404).json({
+      error: "user with the provided clerkId not found!",
+    });
+
   }
 })
 module.exports = router

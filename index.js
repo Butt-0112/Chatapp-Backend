@@ -103,7 +103,7 @@ io.on("connection", async (socket) => {
 
 
       await io.to(to).emit('private message', {
-
+        to,
         ciphertexts,
         from: userID,
         _id,
@@ -145,7 +145,7 @@ io.on("connection", async (socket) => {
           status: { delivered: true, deliveredAt: new Date() }
         });
         await io.to(to).emit('private message', {
-
+          to,
           ciphertexts,
           from: userID,
           _id,
