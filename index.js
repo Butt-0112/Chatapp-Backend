@@ -103,7 +103,7 @@ io.on("connection", async (socket) => {
           'lastMessage.ciphertexts': ciphertexts,
           'lastMessage.ephemeralPublicKey': ephemeralPublicKey,
           'lastMessage.ephemeralSelfPublicKey': ephemeralSelfPublicKey,
-          'updatedAt':timestamp
+          'updatedAt': timestamp
         },
         $inc: { [`unreadCounts.${to}`]: 1 },
       },
@@ -208,7 +208,22 @@ io.on("connection", async (socket) => {
         update: { $set: { 'status.read': true, 'status.readAt': readAt } }
       }
     })
+    const conv = await Conversation.findOneAndUpdate(
+      { participants },
+      { $set: { [`unreadCounts.${userID}`]: 0 } },
+      { new: true }
+    ).lean()
+    const patch = {
+      conversationId: conv._id.toString(),
+      participants,
+      lastMessage: conv.lastMessage,
+      updatedAt: conv.updatedAt,
+    };
+    io.to(userID).emit('conversation:update', {
+      ...patch,
 
+      unreadCount: 0,
+    });
   })
   socket.on('call', ({ from, to, type }) => {
     console.log(from, ' tried to call ', to)
