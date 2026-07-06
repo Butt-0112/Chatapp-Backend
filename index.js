@@ -117,10 +117,10 @@ io.on("connection", async (socket) => {
 
     io.to(userID).emit('conversation:update', {
       ...patch,
-      unreadCount: conv?.unreadCounts?.get(userID) || 0, // sender's own unread unaffected
+      unreadCount: conv?.unreadCounts?.[userID] || 0
     });
     const recipientStatus = getUserStatus(to)
-    console.log('recipient status', recipientStatus, to)
+
     if (recipientStatus === 'online') {
       io.to(to).emit('conversation:update', {
         ...patch,
