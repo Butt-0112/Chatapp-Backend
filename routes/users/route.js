@@ -7,6 +7,8 @@ const { createClerkClient } = require('@clerk/backend')
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
 const UserContacts = require('../../models/Contacts')
 const UserStatus = require('../../models/UserStatus')
+const Conversation = require('../../models/Conversation')
+
 router.post('/fetchMoreUsers', async (req, res) => {
   const { start, end } = req.body
   const totalUsers = await User.countDocuments()
@@ -117,6 +119,56 @@ router.post('/fetchContacts', [
     res.status(404).json({ message: 'This user has no contacts' })
   }
 })
+router.post('/fetchConversations',[
+  body('userId', 'userId is required').notEmpty()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { userId } = req.body
+  try {
+    const myClerkId = userId; // from your auth middleware
+    const conversations = await Conversation
+      .find({ participants: myClerkId })
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const shaped = conversations.map((c) => ({
+      id: c._id.toString(),
+      participants: c.participants,
+      lastMessage: c.lastMessage,
+      unreadCount: c.unreadCounts?.[myClerkId] || 0,
+      updatedAt: c.updatedAt,
+    }));
+
+    res.json(shaped);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+// Call when user opens a chat, to zero their own unread count
+router.post('/conversations/:conversationId/read',[
+  body('userId', 'userId is required').notEmpty()
+], async (req, res) => {
+    const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { userId } = req.body
+  try {
+    const myClerkId = userId;
+    await Conversation.updateOne(
+      { _id: req.params.conversationId },
+      { $set: { [`unreadCounts.${myClerkId}`]: 0 } }
+    );
+    res.sendStatus(200);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
 
 router.post('/fetchMessages', [
   body('from').notEmpty(),
