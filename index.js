@@ -208,6 +208,7 @@ io.on("connection", async (socket) => {
         update: { $set: { 'status.read': true, 'status.readAt': readAt } }
       }
     })
+    const participants = getParticipants(userID, from)
     const conv = await Conversation.findOneAndUpdate(
       { participants },
       { $set: { [`unreadCounts.${userID}`]: 0 } },
