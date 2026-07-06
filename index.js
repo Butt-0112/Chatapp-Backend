@@ -103,6 +103,7 @@ io.on("connection", async (socket) => {
           'lastMessage.ciphertexts': ciphertexts,
           'lastMessage.ephemeralPublicKey': ephemeralPublicKey,
           'lastMessage.ephemeralSelfPublicKey': ephemeralSelfPublicKey,
+          'updatedAt':timestamp
         },
         $inc: { [`unreadCounts.${to}`]: 1 },
       },
