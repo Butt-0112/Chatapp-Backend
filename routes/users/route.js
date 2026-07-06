@@ -8,6 +8,7 @@ const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY 
 const UserContacts = require('../../models/Contacts')
 const UserStatus = require('../../models/UserStatus')
 const Conversation = require('../../models/Conversation')
+const { getParticipants } = require('../../utils/conversationKey')
 
 router.post('/fetchMoreUsers', async (req, res) => {
   const { start, end } = req.body
@@ -119,7 +120,7 @@ router.post('/fetchContacts', [
     res.status(404).json({ message: 'This user has no contacts' })
   }
 })
-router.post('/fetchConversations',[
+router.post('/fetchConversations', [
   body('userId', 'userId is required').notEmpty()
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -149,18 +150,20 @@ router.post('/fetchConversations',[
 });
 
 // Call when user opens a chat, to zero their own unread count
-router.post('/conversations/:conversationId/read',[
-  body('userId', 'userId is required').notEmpty()
+router.post('/conversations/read', [
+  body('userId', 'userId is required').notEmpty(),
+  body('contactId', 'contactId is required').notEmpty()
 ], async (req, res) => {
-    const errors = validationResult(req);
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-  const { userId } = req.body
+  const { userId, contactId } = req.body
   try {
     const myClerkId = userId;
+    const participants = getParticipants(myClerkId, contactId);
     await Conversation.updateOne(
-      { _id: req.params.conversationId },
+      { participants },
       { $set: { [`unreadCounts.${myClerkId}`]: 0 } }
     );
     res.sendStatus(200);
