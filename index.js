@@ -24,6 +24,7 @@ const writeBuffer = require('./utils/write-buffer')
 const { getFCMToken } = require('./utils/fcm-token-cache')
 const { getParticipants } = require('./utils/conversationKey')
 const Conversation = require('./models/Conversation')
+const { registerCallHandlers } = require('./socketHandlers/callHandler')
 app.use(cors({ origin: '*', credentials: true }))
 // app.use(cors({origin:['http://localhost:3000','http://192.168.100.5:3000'],credentials:true}))
 app.use(express.json())
@@ -261,6 +262,7 @@ io.on("connection", async (socket) => {
     setUserStatus(userID, 'offline')
 
   });
+  registerCallHandlers(io, socket, userID)
   roomHanlder(socket)
 });
 io.use((socket, next) => {
