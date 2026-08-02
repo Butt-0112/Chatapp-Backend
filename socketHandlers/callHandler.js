@@ -1,23 +1,49 @@
-// socket/callHandlers.js
-function registerCallHandlers(io, socket, userID) {
-  socket.on('call:offer', ({ to, sdp, callType }) => {
-    io.to(to).emit('call:incoming', { from: userID, sdp, callType });
+const { getUserStatus } = require("../utils/user-status-cache");
+ 
+function registerCallHandlers(io, socket) {
+  socket.on('call:invite', ({ targetUserId, meetingId, encryptedKey, nonce, callerPublicKey, callerName }) => {
+    const status  = getUserStatus(targetUserId);
+ 
+    if (status === 'offline') {
+      socket.emit('call:unavailable', { targetUserId });
+      return;
+    }
+    io.to(targetUserId).emit('call:incoming', {
+      meetingId,
+      encryptedKey,
+      nonce,
+      callerPublicKey,
+      callerId,
+      callerName,
+    });
   });
 
-  socket.on('call:answer', ({ to, sdp }) => {
-    io.to(to).emit('call:answered', { from: userID, sdp });
+  socket.on('call:accept', ({ targetUserId, meetingId }) => {
+    const status  = getUserStatus(targetUserId);
+    if (status === 'online') {
+      io.to(targetUserId).emit('call:accepted', { meetingId, byUserId: callerId });
+    }
   });
 
-  socket.on('call:ice-candidate', ({ to, candidate }) => {
-    io.to(to).emit('call:ice-candidate', { from: userID, candidate });
+  socket.on('call:decline', ({ targetUserId, meetingId }) => {
+    const status  = getUserStatus(targetUserId);
+    if (status==='online') {
+      io.to(targetUserId).emit('call:declined', { meetingId, byUserId: callerId });
+    }
   });
 
-  socket.on('call:reject', ({ to }) => {
-    io.to(to).emit('call:rejected', { from: userID });
+  socket.on('call:cancel', ({ targetUserId, meetingId }) => { 
+    const status  = getUserStatus(targetUserId);
+    if (status === 'online') {
+      io.to(targetSocketId).emit('call:cancelled', { meetingId, byUserId: callerId });
+    }
   });
 
-  socket.on('call:end', ({ to }) => {
-    io.to(to).emit('call:ended', { from: userID });
+  socket.on('call:end', ({ targetUserId, meetingId }) => {
+    const status  = getUserStatus(targetUserId);
+    if (status ==='online') {
+      io.to(targetSocketId).emit('call:ended', { meetingId, byUserId: callerId });
+    }
   });
 }
 
