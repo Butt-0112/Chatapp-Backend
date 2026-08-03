@@ -35,14 +35,14 @@ function registerCallHandlers(io, socket, userID) {
   socket.on('call:cancel', ({ targetUserId, meetingId }) => { 
     const status  = getUserStatus(targetUserId);
     if (status === 'online') {
-      io.to(targetSocketId).emit('call:cancelled', { meetingId, byUserId: userID });
+      io.to(targetUserId).emit('call:cancelled', { meetingId, byUserId: userID });
     }
   });
 
   socket.on('call:end', ({ targetUserId, meetingId }) => {
     const status  = getUserStatus(targetUserId);
     if (status ==='online') {
-      io.to(targetSocketId).emit('call:ended', { meetingId, byUserId: userID });
+      io.to(targetUserId).emit('call:ended', { meetingId, byUserId: userID });
     }
   });
 }
