@@ -1,6 +1,6 @@
 const { getUserStatus } = require("../utils/user-status-cache");
  
-function registerCallHandlers(io, socket) {
+function registerCallHandlers(io, socket, userID) {
   socket.on('call:invite', ({ targetUserId, meetingId, encryptedKey, nonce, callerPublicKey, callerName }) => {
     const status  = getUserStatus(targetUserId);
  
@@ -13,7 +13,7 @@ function registerCallHandlers(io, socket) {
       encryptedKey,
       nonce,
       callerPublicKey,
-      callerId,
+      userID,
       callerName,
     });
   });
@@ -21,28 +21,28 @@ function registerCallHandlers(io, socket) {
   socket.on('call:accept', ({ targetUserId, meetingId }) => {
     const status  = getUserStatus(targetUserId);
     if (status === 'online') {
-      io.to(targetUserId).emit('call:accepted', { meetingId, byUserId: callerId });
+      io.to(targetUserId).emit('call:accepted', { meetingId, byUserId: userID });
     }
   });
 
   socket.on('call:decline', ({ targetUserId, meetingId }) => {
     const status  = getUserStatus(targetUserId);
     if (status==='online') {
-      io.to(targetUserId).emit('call:declined', { meetingId, byUserId: callerId });
+      io.to(targetUserId).emit('call:declined', { meetingId, byUserId: userID });
     }
   });
 
   socket.on('call:cancel', ({ targetUserId, meetingId }) => { 
     const status  = getUserStatus(targetUserId);
     if (status === 'online') {
-      io.to(targetSocketId).emit('call:cancelled', { meetingId, byUserId: callerId });
+      io.to(targetSocketId).emit('call:cancelled', { meetingId, byUserId: userID });
     }
   });
 
   socket.on('call:end', ({ targetUserId, meetingId }) => {
     const status  = getUserStatus(targetUserId);
     if (status ==='online') {
-      io.to(targetSocketId).emit('call:ended', { meetingId, byUserId: callerId });
+      io.to(targetSocketId).emit('call:ended', { meetingId, byUserId: userID });
     }
   });
 }
