@@ -48,6 +48,7 @@ io.on("connection", async (socket) => {
   console.log('user connected')
   const userID = socket.userID
   socket.join(userID)
+  setUserStatus(userID, 'online' )
 
   socket.on('user:status', async (statusUpdate) => {
     const { userId, status, lastSeen } = statusUpdate
